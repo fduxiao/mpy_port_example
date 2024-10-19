@@ -23,6 +23,10 @@ SRC_C = \
 
 # Define source files containung qstrs.
 SRC_QSTR += shared/readline/readline.c shared/runtime/pyexec.c
+
+# Other modules
+include $(HERE)/mods/mods.mk
+
 # Define the required object files.
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
