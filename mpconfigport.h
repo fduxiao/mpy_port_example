@@ -21,6 +21,13 @@
 #define MICROPY_PY_IO                           (1)
 #define MICROPY_PY_STRUCT                       (1)
 
+// builtins
+#define MICROPY_PY_BUILTINS_HELP                (1)
+#define MICROPY_PY_BUILTINS_HELP_MODULES        (1)
+// #define MICROPY_PORT_BUILTINS \
+//     { MP_ROM_QSTR(MP_QSTR_help), MP_ROM_PTR(&mp_builtin_help_obj) },
+
+
 // Type definitions for the specific machine.
 
 typedef intptr_t mp_int_t; // pointer size
