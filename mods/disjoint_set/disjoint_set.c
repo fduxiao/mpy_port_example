@@ -102,14 +102,14 @@ MP_DEFINE_CONST_FUN_OBJ_1(DisjointSet_deinit_obj, DisjointSet_deinit);
 
 
 // class size
-static mp_obj_t DisjointSet_n_sets(const mp_obj_t self_in) {
+static mp_obj_t DisjointSet_get_n_sets(const mp_obj_t self_in) {
     DisjointSet_obj_t* self = MP_OBJ_TO_PTR(self_in);
     if(self->set == NULL) {
         return mp_obj_new_int(0);
     }
     return mp_obj_new_int(self->set->n_sets);
 }
-MP_DEFINE_CONST_FUN_OBJ_1(DisjointSet_n_sets_obj, DisjointSet_n_sets);
+MP_DEFINE_CONST_FUN_OBJ_1(DisjointSet_get_n_sets_obj, DisjointSet_get_n_sets);
 
 
 // find
@@ -155,13 +155,123 @@ static const mp_rom_map_elem_t DisjointSet_locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_empty), MP_ROM_PTR(&DisjointSet_empty_obj) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_init), MP_ROM_PTR(&DisjointSet_init_obj) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deinit), MP_ROM_PTR(&DisjointSet_deinit_obj) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_n_sets), MP_ROM_PTR(&DisjointSet_n_sets_obj) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_n_sets), MP_ROM_PTR(&DisjointSet_get_n_sets_obj) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_find), MP_ROM_PTR(&DisjointSet_find_obj) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_union), MP_ROM_PTR(&DisjointSet_union_obj) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_same), MP_ROM_PTR(&DisjointSet_same_obj) },
 };
 // The symbol dict object.
 static MP_DEFINE_CONST_DICT(DisjointSet_locals_dict, DisjointSet_locals_dict_table);
+
+// special functions
+static mp_obj_t DisjointSet_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
+    DisjointSet_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    switch (op) {
+        case MP_UNARY_OP_LEN:
+            if(self->set == NULL) {
+                return mp_obj_new_int(0);
+            }
+            return mp_obj_new_int(self->set->size);
+        default: return MP_OBJ_NULL; // operator not supported
+    }
+}
+
+static void DisjointSet_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
+    DisjointSet_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if(dest[0] != MP_OBJ_NULL) {
+        // unsupported
+        return;
+    }
+
+    if(attr == MP_QSTR_size) {
+        mp_int_t size = 0;
+        if(self->set != NULL) {
+            size = self->set->size;
+        }
+        dest[0] = mp_obj_new_int(size);
+        return;
+    }
+
+    if(attr == MP_QSTR_n_sets) {
+        mp_int_t n_sets = 0;
+        if(self->set != NULL) {
+            n_sets = self->set->n_sets;
+        }
+        dest[0] = mp_obj_new_int(n_sets);
+        return;
+    }
+
+    // continue lookup in locals_dict
+    dest[1] = MP_OBJ_SENTINEL;
+}
+
+static mp_obj_t DisjointSet_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value_in) {
+    DisjointSet_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_int_t index = mp_obj_get_int(index_in);
+
+    if(value_in == MP_OBJ_NULL) {
+        // unsupported
+        return MP_OBJ_NULL;
+    }
+    
+    if(value_in == MP_OBJ_SENTINEL) {
+        // load
+        mp_int_t result = -1;
+        if(self->set != NULL) {
+            index %= self->set->size;
+            index += self->set->size;
+            index %= self->set->size;
+            result = self->set->data[index];
+        }
+        return mp_obj_new_int(result);
+    }
+    // store
+    if(self->set == NULL) {
+        return MP_OBJ_NULL;
+    }
+    mp_int_t value = mp_obj_get_int(value_in);
+    index %= self->set->size;
+    index += self->set->size;
+    index %= self->set->size;
+    self->set->data[index] = value;
+    return mp_const_none;
+}
+
+// I use the polyiterator here. See https://github.com/micropython/micropython/blob/master/py/objrange.c
+// for other customized iterators.
+typedef struct _DisjointSet_iter_t {
+    mp_obj_base_t base;
+    mp_fun_1_t iternext;
+    disjoint_set_t set;
+    int cur;
+} DisjointSet_iter_t;
+
+static mp_obj_t DisjointSet_it_iternext(mp_obj_t self_in) {
+    DisjointSet_iter_t *self = MP_OBJ_TO_PTR(self_in);
+    disjoint_set_t set = self->set;
+    if(set == NULL) {
+        return MP_OBJ_STOP_ITERATION;
+    }
+    if (self->cur < set->size) {
+        int value = set->data[self->cur];
+        self->cur += 1;
+        return mp_obj_new_int(value);
+    } else {
+        return MP_OBJ_STOP_ITERATION;
+    }
+}
+
+static mp_obj_t DisjointSet_getiter(mp_obj_t self_in, mp_obj_iter_buf_t *iter_buf) {
+    DisjointSet_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    assert(sizeof(DisjointSet_iter_t) <= sizeof(mp_obj_iter_buf_t));
+    DisjointSet_iter_t *it = (DisjointSet_iter_t *)iter_buf;
+    it->base.type = &mp_type_polymorph_iter;
+    it->iternext = DisjointSet_it_iternext;
+    it->set = self->set;
+    it->cur = 0;
+
+    return it;
+}
 
 // Declare the type object.
 MP_DEFINE_CONST_OBJ_TYPE(
@@ -170,6 +280,10 @@ MP_DEFINE_CONST_OBJ_TYPE(
     MP_TYPE_FLAG_NONE,
     print, DisjointSet_print,
     make_new, DisjointSet_make_new,
+    unary_op, DisjointSet_unary_op,
+    attr, DisjointSet_attr,
+    subscr, DisjointSet_subscr,
+    iter, DisjointSet_getiter,
     locals_dict, &DisjointSet_locals_dict
 );
 

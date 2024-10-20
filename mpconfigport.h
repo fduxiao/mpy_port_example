@@ -7,6 +7,7 @@
 #define MICOPY_HEAP_SIZE 40960
 
 // Python internal features.
+#define MICROPY_ENABLE_FINALISER                (1)
 #define MICROPY_ENABLE_GC                       (1)
 #define MICROPY_HELPER_REPL                     (1)
 #define MICROPY_ERROR_REPORTING                 (MICROPY_ERROR_REPORTING_TERSE)
