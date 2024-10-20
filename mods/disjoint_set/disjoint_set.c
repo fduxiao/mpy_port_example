@@ -122,13 +122,18 @@ MP_DEFINE_CONST_FUN_OBJ_2(DisjointSet_find_obj, DisjointSet_find);
 
 
 // union
-static mp_obj_t DisjointSet_union(const mp_obj_t self_in, const mp_obj_t i_in, const mp_obj_t j_in) {
-    DisjointSet_obj_t* self = MP_OBJ_TO_PTR(self_in);
-    mp_int_t i = mp_obj_get_int(i_in);
-    mp_int_t j = mp_obj_get_int(j_in);
-    return mp_obj_new_int(disjoint_set_union(self->set, i, j));
+static mp_obj_t DisjointSet_union(size_t n_args, const mp_obj_t *args) {
+    DisjointSet_obj_t* self = MP_OBJ_TO_PTR(args[0]);
+    mp_int_t i = mp_obj_get_int(args[1]);
+    mp_int_t j = mp_obj_get_int(args[2]);
+    mp_int_t result = disjoint_set_union(self->set, i, j);
+    for(size_t c = 3; c < n_args; c++) {
+        i = mp_obj_get_int(args[c]);
+        result = disjoint_set_union(self->set, result, i);
+    }
+    return mp_obj_new_int(result);
 }
-MP_DEFINE_CONST_FUN_OBJ_3(DisjointSet_union_obj, DisjointSet_union);
+MP_DEFINE_CONST_FUN_OBJ_VAR(DisjointSet_union_obj, 3, DisjointSet_union);
 
 
 // same
