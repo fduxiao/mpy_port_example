@@ -75,7 +75,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(DisjointSet_empty_obj, DisjointSet_empty);
 static mp_obj_t DisjointSet_init(const mp_obj_t self_in, const mp_obj_t size_in) {
     DisjointSet_obj_t* self = MP_OBJ_TO_PTR(self_in);
     if(self->set != NULL) {
-        disjoint_set_delete(self->set);
+        disjoint_set_free(self->set);
     }
     mp_int_t size = mp_obj_get_int(size_in);
     if(size == 0) {
@@ -94,7 +94,7 @@ MP_DEFINE_CONST_FUN_OBJ_2(DisjointSet_init_obj, DisjointSet_init);
 // deinitialize
 static mp_obj_t DisjointSet_deinit(const mp_obj_t self_in) {
     DisjointSet_obj_t* self = MP_OBJ_TO_PTR(self_in);
-    disjoint_set_delete(self->set);
+    disjoint_set_free(self->set);
     self->set = NULL;
     return self_in;
 }
@@ -221,7 +221,7 @@ static mp_obj_t DisjointSet_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t
             index %= self->set->size;
             index += self->set->size;
             index %= self->set->size;
-            result = self->set->data[index];
+            result = disjoint_raw_get(self->set, index);
         }
         return mp_obj_new_int(result);
     }
@@ -233,7 +233,7 @@ static mp_obj_t DisjointSet_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t
     index %= self->set->size;
     index += self->set->size;
     index %= self->set->size;
-    self->set->data[index] = value;
+    disjoint_raw_set(self->set, index, value);
     return mp_const_none;
 }
 
@@ -253,7 +253,7 @@ static mp_obj_t DisjointSet_it_iternext(mp_obj_t self_in) {
         return MP_OBJ_STOP_ITERATION;
     }
     if (self->cur < set->size) {
-        int value = set->data[self->cur];
+        int value = disjoint_raw_get(set, self->cur);
         self->cur += 1;
         return mp_obj_new_int(value);
     } else {

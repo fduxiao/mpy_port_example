@@ -57,8 +57,10 @@ typedef struct _disjoint_set_t {
 }* disjoint_set_t;
 
 disjoint_set_t disjoint_set_new(int size);
+int disjoint_raw_get(const disjoint_set_t set, int index);
+void disjoint_raw_set(const disjoint_set_t set, int index, int value);
 int disjoint_set_find(const disjoint_set_t set, int i);
 int disjoint_set_union(disjoint_set_t set, int i, int j);
-void disjoint_set_delete(disjoint_set_t set);
+void disjoint_set_free(disjoint_set_t set);
 
 #endif
