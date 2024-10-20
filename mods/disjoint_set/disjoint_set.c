@@ -192,6 +192,15 @@ static void DisjointSet_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         return;
     }
 
+    if(attr == MP_QSTR_step) {
+        mp_int_t step = 0;
+        if(self->set != NULL) {
+            step = self->set->step;
+        }
+        dest[0] = mp_obj_new_int(step);
+        return;
+    }
+
     if(attr == MP_QSTR_n_sets) {
         mp_int_t n_sets = 0;
         if(self->set != NULL) {

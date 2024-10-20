@@ -1,20 +1,36 @@
 #include <stdlib.h>
 #include "core.h"
 
+
 disjoint_set_t disjoint_set_new(int size) {
-    disjoint_set_t result = malloc(sizeof(disjoint_set_t));
+    int step = sizeof(int);
+    if(size <= 256) {
+        step = 1;
+    } else if(size <= 65536) {
+        step = 2;
+    } else {
+        step = sizeof(int);
+    }
+
+    disjoint_set_t result = malloc(sizeof(struct _disjoint_set_t));
     if(result == NULL) {
         return NULL;
     }
-    int* data = malloc(size);
-    if(data == NULL) {
+
+    // setup set
+    result->data = NULL;
+    result->step = step;
+    result->n_sets = size;
+    result->size = size;
+    if(size == 0) {
+        return result;
+    }
+
+    result->data = malloc(size * step);
+    if(result->data == NULL) {
         free(result);
         return NULL;
     }
-    // setup set
-    result->data = data;
-    result->n_sets = size;
-    result->size = size;
 
     // set them to zero
     for(int i = 0; i < size; i++) {
@@ -33,7 +49,13 @@ int disjoint_raw_get(const disjoint_set_t set, int index) {
     if(index < 0 || index > set->size) {
         return -1;
     }
-    return set->data[index];
+    if(set->step == sizeof(uint8_t)) {
+        return (int)((uint8_t*)(set->data))[index];
+    }
+    if(set->step == sizeof(uint16_t)) {
+        return (int)((uint16_t*)(set->data))[index];
+    }
+    return ((int*)(set->data))[index];
 }
 
 void disjoint_raw_set(const disjoint_set_t set, int index, int value) {
@@ -46,7 +68,13 @@ void disjoint_raw_set(const disjoint_set_t set, int index, int value) {
     if(index < 0 || index >= set->size) {
         return;
     }
-    set->data[index] = value;
+    if(set->step == sizeof(uint8_t)) {
+        ((uint8_t*)(set->data))[index] = (uint8_t)value;
+    } else if(set->step == sizeof(uint16_t)) {
+        ((uint16_t*)(set->data))[index] = (uint16_t)value;
+    } else {
+        ((int*)(set->data))[index] = value;
+    }
 }
 
 int disjoint_set_find(const disjoint_set_t set, int i) {

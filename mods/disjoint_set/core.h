@@ -52,8 +52,9 @@ Those are the basis that we can flatten a tree.
 
 typedef struct _disjoint_set_t {
     int size;
+    char step;
     int n_sets;
-    int* data;
+    void* data;
 }* disjoint_set_t;
 
 disjoint_set_t disjoint_set_new(int size);
