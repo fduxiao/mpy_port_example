@@ -24,6 +24,12 @@ disjoint_set_t disjoint_set_new(int size) {
 }
 
 int disjoint_set_find(const disjoint_set_t set, int i) {
+    if(set == NULL) {
+        return -1;
+    }
+    if(i < 0 || i >= set->size) {
+        return -1;
+    }
     int root = i;
     // if is not root
     while(set->data[root] != root) {
@@ -43,8 +49,17 @@ int disjoint_set_find(const disjoint_set_t set, int i) {
 }
 
 int disjoint_set_union(disjoint_set_t set, int i, int j) {
+    if(set == NULL) {
+        return -1;
+    }
     int root_i = disjoint_set_find(set, i);
     int root_j = disjoint_set_find(set, j);
+
+    // invalid value
+    if(root_i == -1 || root_j == -1) {
+        return -1;
+    }
+
     if(root_i == root_j) {
         return root_i;
     }
@@ -55,6 +70,11 @@ int disjoint_set_union(disjoint_set_t set, int i, int j) {
 }
 
 void disjoint_set_delete(disjoint_set_t set) {
-    free(set->data);
+    if(set == NULL) {
+        return;
+    }
+    if(set->data != NULL) {
+        free(set->data);
+    }
     free(set);
 }
